@@ -1,0 +1,52 @@
+version: '3.7'
+
+volumes:
+  oracle-data:
+  oracle-backup:
+
+services:
+  react-app:
+    image: my_resume/react-app:v1
+    # build:
+    #   context: frontend/todo-app
+    # dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    restart: always
+    depends_on:
+      - api-user
+    networks:
+      - my-resume-network
+
+  api-user:
+    image: my_resume/api-user-app:v1
+    ports:
+      - "8020:8020"
+    restart: always
+    depends_on:
+      - oracle-app
+    environment:
+      RDS_HOSTNAME: host.docker.internal #oracle-app - service name of oracle app
+      RDS_PORT: 1521
+      RDS_DB_NAME: orcll
+      RDS_USERNAME: dev_user
+      RDS_PASSWORD: root
+    networks:
+      - my-resume-network
+
+  oracle-app:
+    image: container-registry.oracle.com/database/enterprise:latest
+    ports:
+      - "1522:1521"
+    environment:
+      - ORACLE_SID=orcll
+      - ORACLE_PWD=root
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - oracle-backup:/opt/oracle/backup
+    networks:
+      - my-resume-network
+
+# Networks to be created to facilitate communication between containers
+networks:
+  my-resume-network:
