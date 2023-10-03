@@ -6,7 +6,7 @@ volumes:
 
 services:
   react-app:
-    image: my_resume/react-app:v1
+    image: my_resume/react-app:v2
     # build:
     #   context: frontend/todo-app
     # dockerfile: Dockerfile
@@ -17,14 +17,33 @@ services:
       - api-user
     networks:
       - my-resume-network
-
-  api-user:
-    image: my_resume/api-user-app:v1
+  
+  naming-server:
+    image: my_resume/discovery-server:v2
     ports:
-      - "8020:8020"
+      - "8761:8761"
+    restart: always
+    networks:
+      - my-resume-network
+
+  api-gateway-server:
+    image: my_resume/api-gateway-server:v2
+    ports:
+      - "8765:8765"
+    restart: always
+    depends_on:
+      - naming-server
+    networks:
+      - my-resume-network
+  
+  api-user:
+    image: my_resume/api-user-server:v2
+    ports:
+      - "8080:8080"
     restart: always
     depends_on:
       - oracle-app
+      - naming-server
     environment:
       RDS_HOSTNAME: host.docker.internal #oracle-app - service name of oracle app
       RDS_PORT: 1521
