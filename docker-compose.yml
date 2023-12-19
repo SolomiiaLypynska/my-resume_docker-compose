@@ -6,7 +6,7 @@ volumes:
 
 services:
   react-app:
-    image: my_resume/react-app:v1
+    image: my_resume/react-app:v3
     # build:
     #   context: frontend/todo-app
     # dockerfile: Dockerfile
@@ -15,6 +15,7 @@ services:
     restart: always
     depends_on:
       - api-user
+      - api-vacancy
     networks:
       - my-resume-network
   
@@ -35,11 +36,11 @@ services:
       - naming-server
     networks:
       - my-resume-network
-  
-  api-user:
-    image: my_resume/api-user-server:v1
+
+  api-sql-migration:
+    image: my_resume/api-sql-migration:v3
     ports:
-      - "8080:8080"
+      - "9000:9000"
     restart: always
     depends_on:
       - oracle-app
@@ -52,15 +53,34 @@ services:
       RDS_PASSWORD: root
     networks:
       - my-resume-network
+  
+  api-user:
+    image: my_resume/api-user-server:v3
+    ports:
+      - "8080:8080"
+    restart: always
+    depends_on:
+      - oracle-app
+      - naming-server
+      - api-sql-migration
+    environment:
+      RDS_HOSTNAME: host.docker.internal #oracle-app - service name of oracle app
+      RDS_PORT: 1521
+      RDS_DB_NAME: orcll
+      RDS_USERNAME: dev_user
+      RDS_PASSWORD: root
+    networks:
+      - my-resume-network
 
   api-vacancy:
-    image: my_resume/api-vacancy-server:v1
+    image: my_resume/api-vacancy-server:v3
     ports:
       - "8081:8081"
     restart: always
     depends_on:
       - oracle-app
       - naming-server
+      - api-sql-migration
     environment:
       RDS_HOSTNAME: host.docker.internal #oracle-app - service name of oracle app
       RDS_PORT: 1521
